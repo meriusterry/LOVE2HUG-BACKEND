@@ -25,9 +25,9 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 
-// ✅ Body parsers
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// ✅ Body parsers with INCREASED LIMITS (fixes "request entity too large" error)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // ✅ Logging middleware
 app.use((req, res, next) => {
@@ -71,7 +71,6 @@ app.get('/', (req, res) => {
     });
 });
 
-
 // ✅ Test DB connection
 testConnection();
 
@@ -79,9 +78,7 @@ testConnection();
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
-app.use('/api/payfast', payfastRoutes);  // PayFast routes added here
-
-// Add this with other routes (around line 50)
+app.use('/api/payfast', payfastRoutes);
 app.use('/api/contact', contactRoutes);
 
 console.log('✅ Routes registered:');
@@ -89,6 +86,7 @@ console.log('   - /api/auth');
 console.log('   - /api/products');
 console.log('   - /api/orders');
 console.log('   - /api/payfast');
+console.log('   - /api/contact');
 
 // ✅ 404 handler - should be AFTER all routes
 app.use((req, res) => {

@@ -38,16 +38,26 @@ class Order {
             const orderId = orderResult.insertId;
             
             for (const item of items) {
+                // FIXED: Store image_url properly
                 await connection.execute(
-                    `INSERT INTO order_items (order_id, product_id, product_name, product_price, quantity, size, image_filename) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                    [orderId, item.product_id, item.product_name, item.product_price, item.quantity, item.size || '6ft', item.image_filename || null]
+                    `INSERT INTO order_items (order_id, product_id, product_name, product_price, quantity, size, image_url, image_type) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                        orderId, 
+                        item.product_id, 
+                        item.product_name, 
+                        item.product_price, 
+                        item.quantity, 
+                        item.size || '6ft',
+                        item.image_url || null,
+                        item.image_type || null
+                    ]
                 );
                 
                 if (item.product_id) {
                     await connection.execute(
-                        'UPDATE products SET stock = stock - ? WHERE id = ?',
-                        [item.quantity, item.product_id]
+                        'UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?',
+                        [item.quantity, item.product_id, item.quantity]
                     );
                 }
             }
@@ -84,10 +94,7 @@ class Order {
         
         for (let order of rows) {
             const [itemsRows] = await promisePool.execute(
-                `SELECT oi.*, p.image_filename as product_image_filename
-                 FROM order_items oi 
-                 LEFT JOIN products p ON oi.product_id = p.id 
-                 WHERE oi.order_id = ?`,
+                `SELECT * FROM order_items WHERE order_id = ?`,
                 [order.id]
             );
             order.items = itemsRows.map(item => ({
@@ -97,8 +104,8 @@ class Order {
                 product_price: parseFloat(item.product_price),
                 quantity: item.quantity,
                 size: item.size,
-                image_filename: item.image_filename || item.product_image_filename,
-                imageUrl: item.image_filename || item.product_image_filename ? `http://localhost:5001/uploads/products/${item.image_filename || item.product_image_filename}` : null
+                image_url: item.image_url,
+                image_type: item.image_type
             }));
         }
         
@@ -110,10 +117,7 @@ class Order {
         if (orderRows.length === 0) return null;
         
         const [itemsRows] = await promisePool.execute(
-            `SELECT oi.*, p.image_filename as product_image_filename
-             FROM order_items oi 
-             LEFT JOIN products p ON oi.product_id = p.id 
-             WHERE oi.order_id = ?`,
+            `SELECT * FROM order_items WHERE order_id = ?`,
             [id]
         );
         
@@ -126,27 +130,22 @@ class Order {
                 product_price: parseFloat(item.product_price),
                 quantity: item.quantity,
                 size: item.size,
-                image_filename: item.image_filename || item.product_image_filename,
-                imageUrl: item.image_filename || item.product_image_filename ? `http://localhost:5001/uploads/products/${item.image_filename || item.product_image_filename}` : null
+                image_url: item.image_url,
+                image_type: item.image_type
             }))
         };
     }
 
     static async findByOrderNumber(orderNumber) {
         const [rows] = await promisePool.execute(
-            `SELECT o.*, 
-             (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count 
-             FROM orders o 
-             WHERE o.order_number = ?`,
+            `SELECT * FROM orders WHERE order_number = ?`,
             [orderNumber]
         );
         
         if (rows.length === 0) return null;
         
         const [itemsRows] = await promisePool.execute(
-            `SELECT oi.* 
-             FROM order_items oi 
-             WHERE oi.order_id = ?`,
+            `SELECT * FROM order_items WHERE order_id = ?`,
             [rows[0].id]
         );
         
@@ -158,7 +157,9 @@ class Order {
                 product_name: item.product_name,
                 product_price: parseFloat(item.product_price),
                 quantity: item.quantity,
-                size: item.size
+                size: item.size,
+                image_url: item.image_url,
+                image_type: item.image_type
             }))
         };
     }
