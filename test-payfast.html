@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PayFast Test</title>
+</head>
+<body>
+    <h1>PayFast Test Payment</h1>
+    <form action="https://sandbox.payfast.co.za/eng/process" method="post">
+        <input type="hidden" name="merchant_id" value="10048075">
+        <input type="hidden" name="merchant_key" value="2z620n2gaivlv">
+        <input type="hidden" name="return_url" value="http://localhost:3000/orders">
+        <input type="hidden" name="cancel_url" value="http://localhost:3000/cart">
+        <input type="hidden" name="name_first" value="Test">
+        <input type="hidden" name="name_last" value="User">
+        <input type="hidden" name="email_address" value="test@example.com">
+        <input type="hidden" name="m_payment_id" value="TEST123">
+        <input type="hidden" name="amount" value="100.00">
+        <input type="hidden" name="item_name" value="Test Product">
+        <input type="hidden" name="signature" value="92f605d918bae8017223221c48c978b2">
+        <button type="submit">Pay Now</button>
+    </form>
+    <p>This uses the signature: 92f605d918bae8017223221c48c978b2</p>
+</body>
+</html>
